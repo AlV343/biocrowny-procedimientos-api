@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: biocrowny-procedimientos-api
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python app.py"
+    envVars:
+      - key: FOLDER_ID
+        value: 17Ql7R1fYGdrjTJEsxzKPKAN2vjKzMERN
+      - key: CLIENT_ID
+        value: TU_CLIENT_ID
+      - key: CLIENT_SECRET
+        value: TU_CLIENT_SECRET
+      - key: REFRESH_TOKEN
+        value: TU_REFRESH_TOKEN
