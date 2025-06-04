@@ -27,7 +27,7 @@ def drive():
         token_uri="https://oauth2.googleapis.com/token",
         scopes=SCOPES,
     )
-    creds.refresh()
+    creds.refresh(Request())
     return build("drive", "v3", credentials=creds)
 
 # ─────────── listar documentos ───────────
