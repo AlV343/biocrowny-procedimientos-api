@@ -1,54 +1,49 @@
-from flask import Flask, request, jsonify
-import os
+from __future__ import annotations
+import os, io, pathlib
+from flask import Flask, jsonify, send_file, abort
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+CLIENT_ID     = os.environ["CLIENT_ID"]
+CLIENT_SECRET = os.environ["CLIENT_SECRET"]
+REFRESH_TOKEN = os.environ["REFRESH_TOKEN"]
+FOLDER_ID     = os.environ["FOLDER_ID"]
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+
 app = Flask(__name__)
 
-def get_drive_service():
+def drive():
     creds = Credentials(
         None,
-        refresh_token=os.environ["REFRESH_TOKEN"],
+        refresh_token=REFRESH_TOKEN,
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.environ["CLIENT_ID"],
-        client_secret=os.environ["CLIENT_SECRET"],
-        scopes=["https://www.googleapis.com/auth/drive.readonly"]
+        scopes=SCOPES,
     )
+    creds.refresh()
     return build("drive", "v3", credentials=creds)
 
-@app.route("/documentos", methods=["GET"])
-def buscar_documentos():
-    q = request.args.get("q")
-    if not q:
-        return jsonify({"error": "Falta el parámetro 'q'"}), 400
+@app.route("/docs", methods=["GET"])
+def list_docs():
+    q = f"'{FOLDER_ID}' in parents and trashed = false"
+    files = (
+        drive().files()
+        .list(q=q, fields="files(id,name,mimeType,size)", pageSize=1000)
+        .execute()
+        .get("files", [])
+    )
+    return jsonify(files)
 
-    service = get_drive_service()
-    results = service.files().list(
-        q=f"name contains '{q}' and '{os.environ['FOLDER_ID']}' in parents",
-        fields="files(id, name, webViewLink)",
-        pageSize=10
-    ).execute()
-
-    documentos = [
-        {
-            "id": f["id"],
-            "nombre": f["name"],
-            "url": f["webViewLink"]
-        }
-        for f in results.get("files", [])
-    ]
-
-    return jsonify({"documentos": documentos})
-
-@app.route("/documentos/<id>", methods=["GET"])
-def obtener_documento(id):
-    service = get_drive_service()
-    file = service.files().get(fileId=id, fields="name, mimeType").execute()
-    if file["mimeType"] != "application/vnd.google-apps.document":
-        return jsonify({"error": "Tipo de archivo no soportado"}), 400
-
-    content = service.files().export(fileId=id, mimeType="text/plain").execute()
-    return jsonify({"contenido": content.decode("utf-8")})
+@app.route("/docs/<file_id>", methods=["GET"])
+def get_doc(file_id):
+    service = drive()
+    meta = service.files().get(fileId=file_id, fields="name").execute()
+    request = service.files().get_media(fileId=file_id)
+    data = request.execute()
+    tmp = pathlib.Path("/tmp") / meta["name"]
+    tmp.write_bytes(data)
+    return send_file(tmp, as_attachment=True, download_name=meta["name"])
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8000)
