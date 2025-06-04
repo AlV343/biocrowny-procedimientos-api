@@ -1,5 +1,8 @@
-type: web
-name: biocrowny-api
-env: python
-buildCommand: pip install -r requirements.txt
-startCommand: gunicorn -b 0.0.0.0:8000 app:app
+services:
+  - type: web                 # <- obligatorio
+    name: biocrowny-api
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: >
+      gunicorn -b 0.0.0.0:8000 app:app
