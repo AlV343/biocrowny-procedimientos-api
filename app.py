@@ -45,6 +45,7 @@ def list_docs():
 # ─────────── descargar documento ───────────
 @app.route("/doc/<file_id>", methods=["GET"])
 def get_doc(file_id):
+    file_id = request.args.get("id")
     service = drive()
     meta = service.files().get(fileId=file_id, fields="name").execute()
     data = service.files().get_media(fileId=file_id).execute()
