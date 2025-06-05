@@ -1,8 +1,6 @@
-from __future__ import annotations
-import os, io, pathlib
-from flask import Flask, jsonify, send_file
-from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
 
 # ─────────── variables de entorno ───────────
 CLIENT_ID     = os.environ["CLIENT_ID"]
