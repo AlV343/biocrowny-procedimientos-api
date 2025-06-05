@@ -43,7 +43,7 @@ def list_docs():
     return jsonify(files)
 
 # ─────────── descargar documento ───────────
-@app.route("/docs/<file_id>", methods=["GET"])
+@app.route("/doc/<file_id>", methods=["GET"])
 def get_doc(file_id):
     service = drive()
     meta = service.files().get(fileId=file_id, fields="name").execute()
